@@ -13,23 +13,20 @@ RUN apt-get update && \
 	make && \
 	make install
 
+RUN echo "AuthorizedKeysFile /etc/ssh/%u_pub_keys" >> /etc/ssh/sshd_config
+
 ENV S3FS_DEBUG_LEVEL=info
 
 # SFTP username, password, public key
-ARG SFTP_USER=user
 ENV SFTP_USER=user
 ENV SFTP_PASSWORD=password
-ARG SFTP_PUBLIC_KEY=publickey
+ENV SFTP_PUBLIC_KEY=publickey
 ENV AWS_PROFILE=
 
 # S3 configuration
 ENV S3_BUCKET=mybucket
 # S3 prefix should start with a slash '/'
 ENV S3_PREFIX=/
-
-RUN echo "AuthorizedKeysFile /etc/ssh/%u_pub_keys" >> /etc/ssh/sshd_config
-RUN echo "$SFTP_PUBLIC_KEY" >> /etc/ssh/"$SFTP_USER"_pub_keys
-RUN mkdir -p /var/run/sshd
 
 COPY entrypoint /
 RUN chmod +x /entrypoint
