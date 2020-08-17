@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 adduser --disabled-password --gecos "" $SFTP_USER
 echo "$SFTP_USER:$SFTP_PASSWORD" | chpasswd
 
@@ -11,9 +13,12 @@ echo "SFTP user: $SFTP_USER"
 echo "S3 Bucket: $S3_BUCKET"
 echo "S3 Key: $S3_KEY"
 
+echo "Starting SSHD in the background..."
+echo "$SFTP_PUBLIC_KEY" >> /etc/ssh/"$SFTP_USER"_pub_keys
+mkdir -p /var/run/sshd
 /usr/sbin/sshd
-echo "Ready to accept connections..."
 
+echo "Starting S3FS..."
 if [ -z $AWS_PROFILE ]; then
 	echo "Authenticating with IAM Role"
 	s3fs $S3_BUCKET:$S3_KEY /mnt/s3 -o iam_role -o allow_other -o uid=$(id -u $SFTP_USER) -o dbglevel=$S3FS_DEBUG_LEVEL -f
@@ -21,3 +26,5 @@ else
 	echo "Authenticating with AWS_PROFILE: $AWS_PROFILE"
 	s3fs $S3_BUCKET:$S3_KEY /mnt/s3 -o profile=$AWS_PROFILE -o allow_other -o uid=$(id -u $SFTP_USER) -o dbglevel=$S3FS_DEBUG_LEVEL -f
 fi
+
+echo "Ready!"
